@@ -1,11 +1,11 @@
 package homework19;
 
-import static com.codeborne.selenide.Condition.*;
-import static com.codeborne.selenide.Selenide.*;
-
 import com.codeborne.selenide.Configuration;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
+import homework19.pages.LoginPage;
+import homework19.pages.MainPage;
+import homework19.pages.SecureAreaPage;
 
 public class FormAuthenticationTest {
 
@@ -13,40 +13,32 @@ public class FormAuthenticationTest {
   static void setUp() {
     Configuration.browser = "chrome";
     Configuration.browserSize = "1920x1080";
-    Configuration.timeout = 10_000; // 10 сек на ожидание элементов
+    Configuration.timeout = 10_000;
     Configuration.baseUrl = "https://the-internet.herokuapp.com";
   }
 
   @Test
   void loginLogoutScenario() {
-    // 1. Открыть главную страницу
-    open("/");
+    // 1-3. Открыть главную и перейти на страницу логина, проверить заголовок
+    LoginPage loginPage = new MainPage()
+        .openPage()
+        .clickFormAuthentication()
+        .shouldBeOpened();
 
-    // 2. Кликнуть по ссылке "Form Authentication"
-    $("a[href='/login']").click();
+    // 4-6. Ввести креды и залогиниться
+    SecureAreaPage secureAreaPage = loginPage
+        .setUsername("tomsmith")
+        .setPassword("SuperSecretPassword!")
+        .clickLogin();
 
-    // 3. Проверить, что заголовок содержит "Login Page"
-    $("h2").shouldHave(text("Login Page"));
+    // 7-8. Проверить сообщение и наличие кнопки Logout
+    secureAreaPage
+        .shouldShowSuccessMessage("You logged into a secure area!")
+        .shouldHaveLogoutButton();
 
-    // 4-5. Установить Username и Password
-    $("#username").setValue("tomsmith");
-    $("#password").setValue("SuperSecretPassword!");
-
-    // 6. Нажать кнопку Login
-    $("button[type='submit']").click();
-
-    // 7. Проверить сообщение об успешном логине
-    $("#flash")
-        .shouldBe(visible)
-        .shouldHave(text("You logged into a secure area!"));
-
-    // 8. Проверить наличие кнопки Logout
-    $("a[href='/logout']").shouldBe(visible).shouldHave(text("Logout"));
-
-    // 9. Нажать Logout
-    $("a[href='/logout']").click();
-
-    // 10. Проверить, что вернулись на страницу с заголовком "Login Page"
-    $("h2").shouldHave(text("Login Page"));
+    // 9-10. Разлогиниться и убедиться, что снова на странице логина
+    secureAreaPage
+        .clickLogout()
+        .shouldBeOpened();
   }
 }
